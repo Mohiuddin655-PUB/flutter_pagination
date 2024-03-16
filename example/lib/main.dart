@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_pagination/pagination.dart';
+import 'package:andomie_pagination/pagination.dart';
 
 const kNumbersPagination = "numbers";
 

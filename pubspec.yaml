@@ -1,4 +1,4 @@
-name: flutter_pagination
+name: andomie_pagination
 description: "The Pagination class provides functionality for managing pagination state and data retrieval in Flutter apps. It allows for easy loading of data in chunks, handling of scroll events, and notifying when new data is available. With features like preloading and error handling, it simplifies the implementation of paginated lists or grids."
 version: 1.0.1
 repository: https://github.com/Mohiuddin655-PUB/flutter_pagination.git

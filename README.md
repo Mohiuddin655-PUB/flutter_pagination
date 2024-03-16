@@ -12,7 +12,7 @@ implementation of paginated lists or grids.
 ### Short Example:
 
 ```dart
-import 'package:flutter_pagination/pagination.dart';
+import 'package:andomie_pagination/pagination.dart';
 
 void main() {
   final pagination = Pagination<int>.init('example');
@@ -36,7 +36,7 @@ void main() {
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_pagination/pagination.dart';
+import 'package:andomie_pagination/pagination.dart';
 
 const kNumbersPagination = "numbers";
 
