@@ -13,10 +13,41 @@ part 'typedefs.dart';
 
 /// Manages pagination state and data retrieval.
 class Pagination<T extends Object> {
-  final int? _initialSize;
+  /// Number of items to fetch each time.
   final int fetchingSize;
+
+  /// Maximum number of items to load.
   final int? _limit;
+
+  /// Distance to preload more data.
   final double preload;
+
+  /// Initial size of the pagination.
+  final int? _initialSize;
+
+  /// Initial state flag.
+  bool _initial = true;
+
+  /// Loading state flag.
+  bool _loading = false;
+
+  /// Finish state flag.
+  bool _finish = false;
+
+  /// Current snapshot of the pagination state.
+  Object? _snapshot;
+
+  /// List of items currently loaded.
+  List<T> _items = [];
+
+  /// Scroll controller used for pagination.
+  ScrollController? _controller;
+
+  /// Callback function to load more data.
+  OnPaginationCallback<T>? _callback;
+
+  /// Callback function to notify when new data is loaded.
+  OnPaginationNotifier<T>? _notifier;
 
   /// Constructs a Pagination instance with the provided settings.
   ///
@@ -121,33 +152,42 @@ class Pagination<T extends Object> {
     );
   }
 
-  bool _initial = true;
-  bool _loading = false;
-  bool _finish = false;
-  Object? _snapshot;
-  List<T> _items = [];
-  ScrollController? _controller;
-  OnPaginationCallback<T>? _callback;
-  OnPaginationNotifier<T>? _notifier;
-
+  /// Indicates whether the pagination is in its initial state.
   bool get isInitial => _initial;
 
+  /// Indicates whether data is currently being loaded.
   bool get isLoading => _loading;
 
+  /// Indicates whether all available data has been loaded.
   bool get isFinish => _finish;
 
+  /// Retrieves the current snapshot of the pagination state.
   Object? get snapshot => _snapshot;
 
+  /// Retrieves the current snapshot interpreted as a page number.
+  ///
+  /// If the snapshot is not an integer, defaults to page 1.
   int get snapshotAsPage => snapshot is int ? snapshot as int : 1;
 
+  /// Retrieves the list of items currently loaded.
   List<T> get items => _items;
 
+  /// Retrieves the size of the initial loading batch.
   int get initialSize => _initialSize ?? fetchingSize;
 
+  /// Retrieves the total number of items to load.
+  ///
+  /// If [limit] is set, returns the remaining items to reach the limit.
+  ///
+  /// Returns [loadingSize] if the initial load is in progress.
+  ///
+  /// Retrieves the size of the loading batch.
   int get loadingSize => size > 0 ? fetchingSize : initialSize;
 
+  /// Retrieves the maximum number of items to load.
   int? get limit => _limit;
 
+  /// Calculates the remaining number of items that can be loaded.
   int get remainingSize {
     if (limit != null && limit! > 0) {
       if (size < limit!) {
@@ -160,8 +200,12 @@ class Pagination<T extends Object> {
     }
   }
 
+  /// Retrieves the total number of items loaded.
   int get size => _items.length;
 
+  /// Retrieves the total number of items to display.
+  ///
+  /// This takes into account the current pagination state and limits.
   int get itemCount {
     if (_initial) {
       return initialSize;
@@ -189,6 +233,12 @@ class Pagination<T extends Object> {
   }
 
   /// Retrieves the item real index at the specified index.
+  ///
+  /// This method calculates the real index of the item in the entire dataset.
+  ///
+  /// [index]: The index of the item to retrieve.
+  ///
+  /// Retrieves the item real index at the specified index.
   int getRealIndex(int index) {
     final page = snapshotAsPage - 1;
     if (page > 0) {
@@ -198,6 +248,9 @@ class Pagination<T extends Object> {
     }
   }
 
+  /// Adds the fetched data to the list of items and updates pagination state.
+  ///
+  /// [value]: The list of items to add.
   void _puts(List<T> value) {
     _items.addAll(value);
     if (limit != null && size >= limit!) {
@@ -205,6 +258,9 @@ class Pagination<T extends Object> {
     }
   }
 
+  /// Initializes the pagination process.
+  ///
+  /// This function is called when the pagination helper is first set up.
   void _initialize() {
     final controller = _controller;
     if (controller != null) {
@@ -216,6 +272,9 @@ class Pagination<T extends Object> {
     }
   }
 
+  /// Fetches more data based on the current pagination state.
+  ///
+  /// This function is called whenever more data needs to be loaded.
   void _fetch() {
     final callback = _callback;
     final notifier = _notifier;
@@ -255,6 +314,12 @@ class Pagination<T extends Object> {
     }
   }
 
+  /// Initializes pagination for the associated [ScrollController].
+  ///
+  /// [controller]: The [ScrollController] for the list view.
+  /// [callback]: The callback function to load more data.
+  /// [notifier]: The callback function to notify when new data is loaded.
+  ///
   /// Sets up pagination for the associated ScrollController.
   /// Support only two responses [PaginationResponse] or [Response]
   void paginate({
@@ -276,6 +341,11 @@ class Pagination<T extends Object> {
     );
   }
 
+  /// Initializes pagination state and data retrieval.
+  ///
+  /// If [reload] is `true`, it resets the pagination state and reloads the data.
+  ///
+  /// [reload]: Whether to reload the data, defaults to `true`.
   void reload([bool reload = true]) {
     _initial = true;
     _loading = false;
