@@ -211,5 +211,5 @@ class NumberItemPlaceholder extends StatelessWidget {
 
 ## Preview
 
-![Record_2024-03-16-02-19-58-ezgif com-video-to-gif-converter](https://github.com/Mohiuddin655-PUB/flutter_pagination/assets/71176567/1f9db897-5a52-4cc1-98e0-ed57896acb68)
+- ![Record_2024-03-16-02-19-58-ezgif com-video-to-gif-converter](https://github.com/Mohiuddin655-PUB/flutter_pagination/assets/71176567/1f9db897-5a52-4cc1-98e0-ed57896acb68)
 
