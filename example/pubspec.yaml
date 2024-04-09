@@ -37,6 +37,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   andomie_pagination:
     path: ../
+  http: ^1.2.1
+  cached_network_image: ^3.3.1
 
 dev_dependencies:
   flutter_test:
