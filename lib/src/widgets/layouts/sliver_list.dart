@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
+import '../../pagination.dart';
 import '../../utils/sliver_child_delegate.dart';
 import '../helpers/layout_builder.dart';
 
@@ -14,10 +14,10 @@ import '../helpers/layout_builder.dart';
 /// [CustomScrollView] when added to the screen.
 /// Useful for combining multiple scrollable pieces in your UI or if you need
 /// to add some widgets preceding or following your paged list.
-class PaginationSliverList<K, E> extends StatelessWidget {
+class PaginationSliverList<T extends Object> extends StatelessWidget {
   const PaginationSliverList({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     this.addAutomaticKeepAlives = true,
     this.addRepaintBoundaries = true,
@@ -34,7 +34,7 @@ class PaginationSliverList<K, E> extends StatelessWidget {
 
   const PaginationSliverList.separated({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     required IndexedWidgetBuilder separatorBuilder,
     this.addAutomaticKeepAlives = true,
@@ -46,11 +46,11 @@ class PaginationSliverList<K, E> extends StatelessWidget {
   })  : prototypeItem = null,
         _separatorBuilder = separatorBuilder;
 
-  /// Matches [PaginationLayoutBuilder.pagingController].
-  final PaginationController<K, E> pagingController;
+  /// Matches [PaginationLayoutBuilder.pagination].
+  final Pagination<T> pagination;
 
   /// Matches [PaginationLayoutBuilder.builderDelegate].
-  final PaginationChildDelegate<E> builderDelegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// The builder for list item separators, just like in [ListView.separated].
   final IndexedWidgetBuilder? _separatorBuilder;
@@ -82,13 +82,13 @@ class PaginationSliverList<K, E> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PaginationLayoutBuilder<K, E>(
+    return PaginationLayoutBuilder<T>(
       layoutProtocol: PaginationLayoutProtocol.sliver,
-      pagingController: pagingController,
+      pagination: pagination,
       builderDelegate: builderDelegate,
       shrinkWrapFirstPageIndicators: shrinkWrapFirstPageIndicators,
-      completedListingBuilder: _buildSliverList,
-      loadingListingBuilder: _buildSliverList,
+      completeBuilder: _buildSliverList,
+      ongoingBuilder: _buildSliverList,
       errorListingBuilder: _buildSliverList,
     );
   }
@@ -100,7 +100,7 @@ class PaginationSliverList<K, E> extends StatelessWidget {
     WidgetBuilder? statusIndicatorBuilder,
   ) {
     final delegate = _separatorBuilder == null
-        ? PaginationSliverChildDelegate(
+        ? PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: statusIndicatorBuilder,
@@ -109,7 +109,7 @@ class PaginationSliverList<K, E> extends StatelessWidget {
             addSemanticIndexes: addSemanticIndexes,
             semanticIndexCallback: semanticIndexCallback,
           )
-        : PaginationSliverChildDelegate.separated(
+        : PaginationSliverDelegate.separated(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: statusIndicatorBuilder,

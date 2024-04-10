@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Basic layout for indicating that an exception occurred.
-class FirstPageExceptionIndicator extends StatelessWidget {
-  const FirstPageExceptionIndicator({
+class ExceptionWidget extends StatelessWidget {
+  const ExceptionWidget({
     required this.title,
     this.message,
     this.onTryAgain,

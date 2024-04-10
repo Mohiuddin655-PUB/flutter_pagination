@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
+import '../../pagination.dart';
 import '../../utils/sliver_child_delegate.dart';
 import '../helpers/layout_builder.dart';
 
@@ -19,10 +19,10 @@ typedef SliverSimpleGridDelegateBuilder = SliverSimpleGridDelegate Function(
 /// This is a wrapper around the [flutter_staggered_grid_view](https://pub.dev/packages/flutter_staggered_grid_view)
 /// package. For more info on how to build staggered grids, check out the
 /// referred package's documentation and examples.
-class PaginationMasonryGridView<K, E> extends StatelessWidget {
+class PaginationMasonryGridView<T extends Object> extends StatelessWidget {
   const PaginationMasonryGridView({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     required this.gridDelegateBuilder,
     this.scrollDirection = Axis.vertical,
@@ -48,7 +48,7 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
   /// Equivalent to [MasonryGridView.count].
   PaginationMasonryGridView.count({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     required int crossAxisCount,
     this.scrollDirection = Axis.vertical,
@@ -79,7 +79,7 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
   /// Equivalent to [MasonryGridView.extent].
   PaginationMasonryGridView.extent({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     required double maxCrossAxisExtent,
     this.scrollDirection = Axis.vertical,
@@ -107,11 +107,11 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
           );
         });
 
-  /// Matches [PaginationLayoutBuilder.pagingController].
-  final PaginationController<K, E> pagingController;
+  /// Matches [PaginationLayoutBuilder.pagination].
+  final Pagination<T> pagination;
 
   /// Matches [PaginationLayoutBuilder.builderDelegate].
-  final PaginationChildDelegate<E> builderDelegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// Provides the adjusted child count (based on the pagination status) so
   /// that a [SliverSimpleGridDelegate] can be returned.
@@ -168,12 +168,12 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PaginationLayoutBuilder<K, E>(
+    return PaginationLayoutBuilder<T>(
       layoutProtocol: PaginationLayoutProtocol.box,
-      pagingController: pagingController,
+      pagination: pagination,
       builderDelegate: builderDelegate,
       shrinkWrapFirstPageIndicators: _shrinkWrapFirstPageIndicators,
-      completedListingBuilder: (_, itemBuilder, itemCount, indicatorBuilder) {
+      completeBuilder: (_, itemBuilder, itemCount, indicatorBuilder) {
         return MasonryGridView.custom(
           scrollDirection: scrollDirection,
           reverse: reverse,
@@ -191,7 +191,7 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
           gridDelegate: gridDelegateBuilder(
             itemCount + (indicatorBuilder == null ? 0 : 1),
           ),
-          childrenDelegate: PaginationSliverChildDelegate(
+          childrenDelegate: PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: indicatorBuilder,
@@ -201,7 +201,7 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
           ),
         );
       },
-      loadingListingBuilder: (_, itemBuilder, itemCount, indicatorBuilder) {
+      ongoingBuilder: (_, itemBuilder, itemCount, indicatorBuilder) {
         return MasonryGridView.custom(
           scrollDirection: scrollDirection,
           reverse: reverse,
@@ -219,7 +219,7 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
           gridDelegate: gridDelegateBuilder(
             itemCount + 1,
           ),
-          childrenDelegate: PaginationSliverChildDelegate(
+          childrenDelegate: PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: indicatorBuilder,
@@ -247,7 +247,7 @@ class PaginationMasonryGridView<K, E> extends StatelessWidget {
           gridDelegate: gridDelegateBuilder(
             itemCount + 1,
           ),
-          childrenDelegate: PaginationSliverChildDelegate(
+          childrenDelegate: PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: indicatorBuilder,

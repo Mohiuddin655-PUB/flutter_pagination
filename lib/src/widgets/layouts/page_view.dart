@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
+import '../../pagination.dart';
 import '../../utils/sliver_child_delegate.dart';
 import '../helpers/layout_builder.dart';
 
@@ -12,10 +12,10 @@ import '../helpers/layout_builder.dart';
 ///
 /// Similar to a [PageView].
 /// Useful for combining another paged widget with a page view with details.
-class PaginationPageView<K, E> extends StatelessWidget {
+class PaginationPageView<T extends Object> extends StatelessWidget {
   const PaginationPageView({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     this.addAutomaticKeepAlives = true,
     this.addRepaintBoundaries = true,
@@ -35,11 +35,11 @@ class PaginationPageView<K, E> extends StatelessWidget {
     this.shrinkWrapFirstPageIndicators = false,
   });
 
-  /// Matches [PaginationLayoutBuilder.pagingController].
-  final PaginationController<K, E> pagingController;
+  /// Matches [PaginationLayoutBuilder.pagination].
+  final Pagination<T> pagination;
 
   /// Matches [PaginationLayoutBuilder.builderDelegate].
-  final PaginationChildDelegate<E> builderDelegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// Matches [SliverChildBuilderDelegate.addAutomaticKeepAlives].
   final bool addAutomaticKeepAlives;
@@ -91,12 +91,12 @@ class PaginationPageView<K, E> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PaginationLayoutBuilder<K, E>(
+    return PaginationLayoutBuilder<T>(
       layoutProtocol: PaginationLayoutProtocol.box,
-      pagingController: pagingController,
+      pagination: pagination,
       builderDelegate: builderDelegate,
       shrinkWrapFirstPageIndicators: shrinkWrapFirstPageIndicators,
-      completedListingBuilder: (
+      completeBuilder: (
         context,
         itemBuilder,
         itemCount,
@@ -116,7 +116,7 @@ class PaginationPageView<K, E> extends StatelessWidget {
           physics: physics,
           pageSnapping: pageSnapping,
           padEnds: padEnds,
-          childrenDelegate: PaginationSliverChildDelegate(
+          childrenDelegate: PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: noMoreItemsIndicatorBuilder,
@@ -126,7 +126,7 @@ class PaginationPageView<K, E> extends StatelessWidget {
           ),
         );
       },
-      loadingListingBuilder: (
+      ongoingBuilder: (
         context,
         itemBuilder,
         itemCount,
@@ -146,7 +146,7 @@ class PaginationPageView<K, E> extends StatelessWidget {
           physics: physics,
           pageSnapping: pageSnapping,
           padEnds: padEnds,
-          childrenDelegate: PaginationSliverChildDelegate(
+          childrenDelegate: PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: progressIndicatorBuilder,
@@ -176,7 +176,7 @@ class PaginationPageView<K, E> extends StatelessWidget {
           physics: physics,
           pageSnapping: pageSnapping,
           padEnds: padEnds,
-          childrenDelegate: PaginationSliverChildDelegate(
+          childrenDelegate: PaginationSliverDelegate(
             builder: itemBuilder,
             childCount: itemCount,
             appendixBuilder: errorIndicatorBuilder,

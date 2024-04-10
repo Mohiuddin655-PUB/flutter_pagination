@@ -9,11 +9,13 @@ class FooterTile extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(
-          top: 16,
-          bottom: 16,
-        ),
-        child: Center(child: child),
-      );
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 16,
+        bottom: 16,
+      ),
+      child: Center(child: child),
+    );
+  }
 }

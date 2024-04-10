@@ -5,21 +5,21 @@ import 'status.dart';
 /// The current item's list, error, and next page key state for a paginated
 /// widget.
 @immutable
-class PaginationState<K, E> {
+class PaginationState<T extends Object> {
   const PaginationState({
-    this.key,
+    this.snapshot,
     this.items,
     this.error,
   });
 
   /// List with all items loaded so far.
-  final List<E>? items;
+  final List<T>? items;
 
   /// The current error, if any.
   final dynamic error;
 
   /// The key for the next page to be fetched.
-  final K? key;
+  final Object? snapshot;
 
   /// The current pagination status.
   PaginationStatus get status {
@@ -32,24 +32,24 @@ class PaginationState<K, E> {
     }
 
     if (_isLoadingFirstPage) {
-      return PaginationStatus.loadingFirstPage;
+      return PaginationStatus.initial;
     }
 
     if (_hasSubsequentPageError) {
-      return PaginationStatus.subsequentPageError;
+      return PaginationStatus.failure;
     }
 
     if (_isEmpty) {
-      return PaginationStatus.noItemsFound;
+      return PaginationStatus.nullable;
     } else {
-      return PaginationStatus.firstPageError;
+      return PaginationStatus.error;
     }
   }
 
   @override
   String toString() {
     return '${objectRuntimeType(this, 'PaginationState')}(items: \u2524'
-        '$items\u251C, error: $error, key: $key)';
+        '$items\u251C, error: $error, key: $snapshot)';
   }
 
   @override
@@ -60,7 +60,7 @@ class PaginationState<K, E> {
     return other is PaginationState &&
         other.items == items &&
         other.error == error &&
-        other.key == key;
+        other.snapshot == snapshot;
   }
 
   @override
@@ -68,13 +68,13 @@ class PaginationState<K, E> {
     return Object.hash(
       items.hashCode,
       error.hashCode,
-      key.hashCode,
+      snapshot.hashCode,
     );
   }
 
   int? get _itemCount => items?.length;
 
-  bool get _hasNextPage => key != null;
+  bool get _hasNextPage => snapshot != null;
 
   bool get _hasItems {
     final itemCount = _itemCount;

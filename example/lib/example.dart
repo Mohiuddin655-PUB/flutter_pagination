@@ -1,58 +1,73 @@
+import 'package:example/samples/custom.dart';
 import 'package:flutter/material.dart';
 
-import 'samples/beer_list_view.dart';
-import 'samples/beer_masonry_grid.dart';
-import 'samples/beer_page_view.dart';
-import 'samples/beer_sliver_grid.dart';
-import 'samples/beer_sliver_list.dart';
+import 'samples/grid_view.dart';
+import 'samples/list_view.dart';
+import 'samples/masonry_grid.dart';
+import 'samples/page_view.dart';
+import 'samples/sliver_grid.dart';
+import 'samples/sliver_list.dart';
 
-class BeerListScreen extends StatefulWidget {
-  const BeerListScreen({super.key});
+class Examples extends StatefulWidget {
+  const Examples({super.key});
 
   @override
-  State<BeerListScreen> createState() => _BeerListScreenState();
+  State<Examples> createState() => _ExamplesState();
 }
 
-class _BeerListScreenState extends State<BeerListScreen> {
+class _ExamplesState extends State<Examples> {
   int _selectedBottomNavigationIndex = 0;
 
   final List<_BottomNavigationItem> _bottomNavigationItems = [
     _BottomNavigationItem(
-      label: 'Refresh',
-      iconData: Icons.refresh,
-      widgetBuilder: (context) => const BeerListView(),
+      label: 'List',
+      iconData: Icons.list,
+      widgetBuilder: (context) => const ListViewExample(),
     ),
     _BottomNavigationItem(
-      label: 'Search',
-      iconData: Icons.search,
-      widgetBuilder: (context) => const BeerSliverList(),
+      label: 'Sliver List',
+      iconData: Icons.list,
+      widgetBuilder: (context) => const SliverListExample(),
     ),
     _BottomNavigationItem(
       label: 'Grid',
       iconData: Icons.grid_on,
-      widgetBuilder: (context) => const BeerSliverGrid(),
+      widgetBuilder: (context) => const GridViewExample(),
     ),
     _BottomNavigationItem(
-      label: 'MasonryGrid',
+      label: 'Grid',
+      iconData: Icons.grid_on,
+      widgetBuilder: (context) => const SliverGridExample(),
+    ),
+    _BottomNavigationItem(
+      label: 'Masonry',
       iconData: Icons.view_quilt,
-      widgetBuilder: (context) => const BeerMasonryGrid(),
+      widgetBuilder: (context) => const MasonryGridExample(),
     ),
     _BottomNavigationItem(
-      label: 'PageView',
+      label: 'Page',
       iconData: Icons.fullscreen,
-      widgetBuilder: (context) => const BeerPageView(),
+      widgetBuilder: (context) => const PageViewExample(),
+    ),
+    _BottomNavigationItem(
+      label: 'Custom',
+      iconData: Icons.add_circle_outline,
+      widgetBuilder: (context) => const CustomExample(),
     ),
   ];
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Beers'),
+          title: const Text('ANDOMIE PAGINATION'),
+          centerTitle: true,
         ),
         resizeToAvoidBottomInset: false,
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedBottomNavigationIndex,
           type: BottomNavigationBarType.fixed,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
           items: _bottomNavigationItems
               .map(
                 (item) => BottomNavigationBarItem(

@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
+import '../../pagination.dart';
 import 'sliver_list.dart';
 
 /// A [ListView] with pagination capabilities.
@@ -11,11 +11,11 @@ import 'sliver_list.dart';
 ///
 /// Wraps a [PaginationSliverList] in a [BoxScrollView] so that it can be
 /// used without the need for a [CustomScrollView]. Similar to a [ListView].
-class PaginationListView<K, E> extends BoxScrollView {
+class PaginationListView<T extends Object> extends BoxScrollView {
   const PaginationListView({
     super.key,
-    required this.pagingController,
-    required this.delegate,
+    required this.pagination,
+    required this.builderDelegate,
     // Matches [ScrollView.controller].
     ScrollController? scrollController,
     // Matches [ScrollView.scrollDirection].
@@ -69,8 +69,8 @@ class PaginationListView<K, E> extends BoxScrollView {
 
   const PaginationListView.separated({
     super.key,
-    required this.pagingController,
-    required this.delegate,
+    required this.pagination,
+    required this.builderDelegate,
     required IndexedWidgetBuilder separatorBuilder,
     // Matches [ScrollView.controller].
     ScrollController? scrollController,
@@ -119,11 +119,11 @@ class PaginationListView<K, E> extends BoxScrollView {
           clipBehavior: clipBehavior,
         );
 
-  /// Matches [PagedLayoutBuilder.pagingController].
-  final PaginationController<K, E> pagingController;
+  /// Matches [PagedLayoutBuilder.pagination].
+  final Pagination<T> pagination;
 
   /// Matches [PagedLayoutBuilder.builderDelegate].
-  final PaginationChildDelegate<E> delegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// The builder for list item separators, just like in [ListView.separated].
   final IndexedWidgetBuilder? _separatorBuilder;
@@ -154,9 +154,9 @@ class PaginationListView<K, E> extends BoxScrollView {
   Widget buildChildLayout(BuildContext context) {
     final separatorBuilder = _separatorBuilder;
     return separatorBuilder != null
-        ? PaginationSliverList<K, E>.separated(
-            builderDelegate: delegate,
-            pagingController: pagingController,
+        ? PaginationSliverList<T>.separated(
+            builderDelegate: builderDelegate,
+            pagination: pagination,
             separatorBuilder: separatorBuilder,
             addAutomaticKeepAlives: addAutomaticKeepAlives,
             addRepaintBoundaries: addRepaintBoundaries,
@@ -164,9 +164,9 @@ class PaginationListView<K, E> extends BoxScrollView {
             itemExtent: itemExtent,
             shrinkWrapFirstPageIndicators: _shrinkWrapFirstPageIndicators,
           )
-        : PaginationSliverList<K, E>(
-            builderDelegate: delegate,
-            pagingController: pagingController,
+        : PaginationSliverList<T>(
+            builderDelegate: builderDelegate,
+            pagination: pagination,
             addAutomaticKeepAlives: addAutomaticKeepAlives,
             addRepaintBoundaries: addRepaintBoundaries,
             addSemanticIndexes: addSemanticIndexes,

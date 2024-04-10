@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 ///
 /// To include list separators, use
 /// [AppendedSliverChildBuilderDelegate.separated].
-class PaginationSliverChildDelegate extends SliverChildBuilderDelegate {
-  PaginationSliverChildDelegate({
+class PaginationSliverDelegate extends SliverChildBuilderDelegate {
+  PaginationSliverDelegate({
     required IndexedWidgetBuilder builder,
     required int childCount,
     WidgetBuilder? appendixBuilder,
@@ -32,7 +32,7 @@ class PaginationSliverChildDelegate extends SliverChildBuilderDelegate {
           semanticIndexCallback: semanticIndexCallback ?? (_, index) => index,
         );
 
-  PaginationSliverChildDelegate.separated({
+  PaginationSliverDelegate.separated({
     required IndexedWidgetBuilder builder,
     required int childCount,
     required IndexedWidgetBuilder separatorBuilder,

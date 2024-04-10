@@ -1,19 +1,17 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
 import '../../model/state.dart';
 import '../../model/status.dart';
+import '../../pagination.dart';
 import '../../utils/listenable_listener.dart';
-import 'default_status_indicators/first_page_error_indicator.dart';
-import 'default_status_indicators/first_page_progress_indicator.dart';
-import 'default_status_indicators/new_page_error_indicator.dart';
-import 'default_status_indicators/new_page_progress_indicator.dart';
-import 'default_status_indicators/no_items_found_indicator.dart';
+import '../samples/initial_error.dart';
+import '../samples/initial_indicator.dart';
+import '../samples/nullable_error.dart';
+import '../samples/ongoing_error.dart';
+import '../samples/ongoing_indicator.dart';
 
 typedef CompletedListingBuilder = Widget Function(
   BuildContext context,
@@ -42,21 +40,21 @@ enum PaginationLayoutProtocol { sliver, box }
 /// Facilitates creating infinitely scrolled paged layouts.
 ///
 /// Combines a [PaginationController] with a
-/// [PaginationChildDelegate] and calls the supplied
-/// [loadingListingBuilder], [errorListingBuilder] or
-/// [completedListingBuilder] for filling in the gaps.
+/// [PaginationBuilderDelegate] and calls the supplied
+/// [ongoingBuilder], [errorListingBuilder] or
+/// [completeBuilder] for filling in the gaps.
 ///
 /// For ordinary cases, this widget shouldn't be used directly. Instead, take a
 /// look at [PagedSliverList], [PagedSliverGrid], [PagedListView],
 /// [PagedGridView], [PagedMasonryGridView], or [PagedPageView].
-class PaginationLayoutBuilder<K, E> extends StatefulWidget {
+class PaginationLayoutBuilder<T extends Object> extends StatefulWidget {
   const PaginationLayoutBuilder({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
-    required this.loadingListingBuilder,
+    required this.ongoingBuilder,
     required this.errorListingBuilder,
-    required this.completedListingBuilder,
+    required this.completeBuilder,
     required this.layoutProtocol,
     this.shrinkWrapFirstPageIndicators = false,
   });
@@ -65,19 +63,19 @@ class PaginationLayoutBuilder<K, E> extends StatefulWidget {
   ///
   /// Informs the current state of the pagination and requests new items from
   /// its listeners.
-  final PaginationController<K, E> pagingController;
+  final Pagination<T> pagination;
 
   /// The delegate for building the UI pieces of scrolling paged listings.
-  final PaginationChildDelegate<E> builderDelegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// The builder for an in-progress listing.
-  final LoadingListingBuilder loadingListingBuilder;
+  final LoadingListingBuilder ongoingBuilder;
 
   /// The builder for an in-progress listing with a failed request.
   final ErrorListingBuilder errorListingBuilder;
 
   /// The builder for a completed listing.
-  final CompletedListingBuilder completedListingBuilder;
+  final CompletedListingBuilder completeBuilder;
 
   /// Whether the extent of the first page indicators should be determined by
   /// the contents being viewed.
@@ -93,148 +91,121 @@ class PaginationLayoutBuilder<K, E> extends StatefulWidget {
   /// The layout protocol of the widget you're using this to build.
   ///
   /// For example, if [PaginationLayoutProtocol.sliver] is specified, then
-  /// [loadingListingBuilder], [errorListingBuilder], and
-  /// [completedListingBuilder] have to return a Sliver widget.
+  /// [ongoingBuilder], [errorListingBuilder], and
+  /// [completeBuilder] have to return a Sliver widget.
   final PaginationLayoutProtocol layoutProtocol;
 
   @override
-  State<PaginationLayoutBuilder<K, E>> createState() {
-    return _PaginationLayoutBuilderState<K, E>();
+  State<PaginationLayoutBuilder<T>> createState() {
+    return _PaginationLayoutBuilderState<T>();
   }
 }
 
-class _PaginationLayoutBuilderState<K, E>
-    extends State<PaginationLayoutBuilder<K, E>> {
-  PaginationController<K, E> get _controller => widget.pagingController;
+class _PaginationLayoutBuilderState<T extends Object>
+    extends State<PaginationLayoutBuilder<T>> {
+  Pagination<T> get _pagination => widget.pagination;
 
-  PaginationChildDelegate<E> get _builderDelegate =>
-      widget.builderDelegate;
+  PaginationBuilderDelegate<T> get _delegate => widget.builderDelegate;
 
   bool get _shrinkWrapFirstPageIndicators =>
       widget.shrinkWrapFirstPageIndicators;
 
   PaginationLayoutProtocol get _layoutProtocol => widget.layoutProtocol;
 
-  WidgetBuilder get _firstPageErrorIndicatorBuilder =>
-      _builderDelegate.firstPageErrorIndicatorBuilder ??
-      (_) => FirstPageErrorIndicator(
-            onTryAgain: _controller.retryLastFailedRequest,
-          );
+  WidgetBuilder get _initialError {
+    return _delegate.initialError ??
+        (_) => InitialError(onTryAgain: _pagination.retry);
+  }
 
-  WidgetBuilder get _newPageErrorIndicatorBuilder =>
-      _builderDelegate.newPageErrorIndicatorBuilder ??
-      (_) => NewPageErrorIndicator(
-            onTap: _controller.retryLastFailedRequest,
-          );
+  WidgetBuilder get _ongoingError =>
+      _delegate.ongoingError ?? (_) => OngoingError(onTap: _pagination.retry);
 
-  WidgetBuilder get _firstPageProgressIndicatorBuilder =>
-      _builderDelegate.firstPageProgressIndicatorBuilder ??
-      (_) => FirstPageProgressIndicator();
+  WidgetBuilder get _initialIndicator =>
+      _delegate.initialIndicator ?? (_) => const InitialIndicator();
 
-  WidgetBuilder get _newPageProgressIndicatorBuilder =>
-      _builderDelegate.newPageProgressIndicatorBuilder ??
-      (_) => const NewPageProgressIndicator();
+  WidgetBuilder get _ongoingIndicator =>
+      _delegate.ongoingIndicator ?? (_) => const OngoingIndicator();
 
-  WidgetBuilder get _noItemsFoundIndicatorBuilder =>
-      _builderDelegate.noItemsFoundIndicatorBuilder ??
-      (_) => const NoItemsFoundIndicator();
+  WidgetBuilder get _nullableError =>
+      _delegate.nullableError ?? (_) => const NullableError();
 
-  WidgetBuilder? get _noMoreItemsIndicatorBuilder =>
-      _builderDelegate.noMoreItemsIndicatorBuilder;
-
-  int get _invisibleItemsThreshold => _controller.invisibleItemsThreshold ?? 3;
-
-  int get _itemCount => _controller.itemCount;
-
-  bool get _hasNextPage => _controller.hasNextPage;
-
-  K? get _nextKey => _controller.nextKey;
+  WidgetBuilder? get _completeBuilder => _delegate.completeBuilder;
 
   /// Avoids duplicate requests on rebuilds.
-  bool _hasRequestedNextPage = false;
+  bool _hasNext = false;
 
   @override
   Widget build(BuildContext context) {
     return PaginationListener(
-      listenable: _controller,
+      listenable: _pagination,
       listener: () {
-        final status = _controller.value.status;
-
-        if (status == PaginationStatus.loadingFirstPage) {
-          _controller.notifyPageRequestListeners(
-            _controller.initialKey,
-          );
-        }
-
-        if (status == PaginationStatus.ongoing) {
-          _hasRequestedNextPage = false;
+        final status = _pagination.value.status;
+        if (status.isInitial) {
+          _pagination.fetch();
+        } else if (status.isOngoing) {
+          _hasNext = false;
         }
       },
-      child: ValueListenableBuilder<PaginationState<K, E>>(
-        valueListenable: _controller,
-        builder: (context, pagingState, _) {
+      child: ValueListenableBuilder<PaginationState<T>>(
+        valueListenable: _pagination,
+        builder: (context, state, _) {
           Widget child;
-          final items = _controller.items;
-          switch (pagingState.status) {
+          switch (state.status) {
             case PaginationStatus.ongoing:
-              child = widget.loadingListingBuilder(
+              child = widget.ongoingBuilder(
                 context,
-                // We must create this closure to close over the [items]
-                // value. That way, we are safe if [items] value changes
-                // while Flutter rebuilds the widget (due to animations, for
-                // example.)
-                (c, i) => _buildListItemWidget(c, i, items!),
-                _itemCount,
-                _newPageProgressIndicatorBuilder,
+                _buildItem,
+                _pagination.itemCount,
+                _ongoingIndicator,
               );
               break;
             case PaginationStatus.completed:
-              child = widget.completedListingBuilder(
+              child = widget.completeBuilder(
                 context,
-                (c, i) => _buildListItemWidget(c, i, items!),
-                _itemCount,
-                _noMoreItemsIndicatorBuilder,
+                _buildItem,
+                _pagination.itemCount,
+                _completeBuilder,
               );
               break;
-            case PaginationStatus.loadingFirstPage:
-              child = _FirstPageStatusIndicatorBuilder(
-                builder: _firstPageProgressIndicatorBuilder,
+            case PaginationStatus.initial:
+              child = _InitialBuilder(
+                builder: _initialIndicator,
                 shrinkWrap: _shrinkWrapFirstPageIndicators,
                 layoutProtocol: _layoutProtocol,
               );
               break;
-            case PaginationStatus.subsequentPageError:
+            case PaginationStatus.failure:
               child = widget.errorListingBuilder(
                 context,
-                (c, i) => _buildListItemWidget(c, i, items!),
-                _itemCount,
-                (context) => _newPageErrorIndicatorBuilder(context),
+                _buildItem,
+                _pagination.itemCount,
+                (context) => _ongoingError(context),
               );
               break;
-            case PaginationStatus.noItemsFound:
-              child = _FirstPageStatusIndicatorBuilder(
-                builder: _noItemsFoundIndicatorBuilder,
+            case PaginationStatus.nullable:
+              child = _InitialBuilder(
+                builder: _nullableError,
                 shrinkWrap: _shrinkWrapFirstPageIndicators,
                 layoutProtocol: _layoutProtocol,
               );
               break;
             default:
-              child = _FirstPageStatusIndicatorBuilder(
-                builder: _firstPageErrorIndicatorBuilder,
+              child = _InitialBuilder(
+                builder: _initialError,
                 shrinkWrap: _shrinkWrapFirstPageIndicators,
                 layoutProtocol: _layoutProtocol,
               );
           }
 
-          if (_builderDelegate.animateTransitions) {
+          if (_delegate.animateTransitions) {
             if (_layoutProtocol == PaginationLayoutProtocol.sliver) {
               return SliverAnimatedSwitcher(
-                duration: _builderDelegate.transitionDuration,
+                duration: _delegate.transitionDuration,
                 child: child,
               );
             } else {
               return AnimatedSwitcher(
-                duration: _builderDelegate.transitionDuration,
+                duration: _delegate.transitionDuration,
                 child: child,
               );
             }
@@ -246,44 +217,28 @@ class _PaginationLayoutBuilderState<K, E>
     );
   }
 
-  /// Connects the [_controller] with the [_builderDelegate] in order to
+  /// Connects the [_pagination] with the [_delegate] in order to
   /// create a list item widget and request more items if needed.
-  Widget _buildListItemWidget(BuildContext context, int index, List<E> items) {
-    if (!_hasRequestedNextPage) {
-      final newPageRequestTriggerIndex =
-          max(0, _itemCount - _invisibleItemsThreshold);
-
-      final isBuildingTriggerIndexItem = index == newPageRequestTriggerIndex;
-
-      if (_hasNextPage && isBuildingTriggerIndexItem) {
-        // Schedules the request for the end of this frame.
+  Widget _buildItem(BuildContext context, int index) {
+    if (!_hasNext) {
+      final isTriggerMode = index == _pagination.triggerIndex;
+      if (isTriggerMode) {
+        _hasNext = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _controller.notifyPageRequestListeners(_nextKey as K);
+          _pagination.fetch();
         });
-        _hasRequestedNextPage = true;
       }
     }
-
-    final item = items[index];
-    return _builderDelegate.itemBuilder(context, item, index);
+    return _delegate.itemBuilder(context, _pagination.getItem(index), index);
   }
 }
 
-extension on PaginationController {
-  /// The loaded items count.
-  int get itemCount => items?.length ?? 0;
-
-  /// Tells whether there's a next page to request.
-  bool get hasNextPage => nextKey != null;
-}
-
-class _FirstPageStatusIndicatorBuilder extends StatelessWidget {
-  const _FirstPageStatusIndicatorBuilder({
+class _InitialBuilder extends StatelessWidget {
+  const _InitialBuilder({
     required this.builder,
     required this.layoutProtocol,
     this.shrinkWrap = false,
-    Key? key,
-  }) : super(key: key);
+  });
 
   final WidgetBuilder builder;
   final bool shrinkWrap;

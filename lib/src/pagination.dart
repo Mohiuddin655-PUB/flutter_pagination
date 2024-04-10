@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:andomie_pagination/flutter_pagination.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_entity/flutter_entity.dart';
 
@@ -11,8 +12,10 @@ part 'helper.dart';
 part 'response.dart';
 part 'typedefs.dart';
 
+typedef PagingStatusListener = void Function(PaginationStatus status);
+
 /// Manages pagination state and data retrieval.
-class Pagination<T extends Object> {
+class Pagination<T extends Object> extends ValueNotifier<PaginationState<T>> {
   /// Number of items to fetch each time.
   final int fetchingSize;
 
@@ -21,6 +24,9 @@ class Pagination<T extends Object> {
 
   /// Distance to preload more data.
   final double preload;
+
+  /// Distance to preload more data.
+  final int? threshold;
 
   /// Initial size of the pagination.
   final int? _initialSize;
@@ -38,10 +44,12 @@ class Pagination<T extends Object> {
   Object? _snapshot;
 
   /// List of items currently loaded.
-  List<T> _items = [];
+  List<T> get _items => value.items ?? [];
 
   /// Scroll controller used for pagination.
   ScrollController? _controller;
+
+  bool get isControllerMode => _controller != null;
 
   /// Callback function to load more data.
   OnPaginationCallback<T>? _callback;
@@ -57,10 +65,13 @@ class Pagination<T extends Object> {
   Pagination({
     this.fetchingSize = 10,
     this.preload = 1000,
+    this.threshold = 3,
     int? limit,
     int? initialSize,
+    Object? snapshot,
   })  : _initialSize = initialSize,
-        _limit = limit;
+        _limit = limit,
+        super(PaginationState(snapshot: snapshot));
 
   static final _proxies = <String, Pagination>{};
 
@@ -110,6 +121,23 @@ class Pagination<T extends Object> {
     return of<T>(name).reload(reload);
   }
 
+  static void disposeOf<T extends Object>(String name) {
+    return of<T>(name).dispose();
+  }
+
+  static void closeOf(String name) => _proxies.remove(name);
+
+  static PaginationConfig configOf<T extends Object>(String name) {
+    return of<T>(name).config;
+  }
+
+  static void pushOf<T extends Object>(
+    String name,
+    PaginationResponse<T> value,
+  ) {
+    return of<T>(name).push(value);
+  }
+
   /// Initializes a new Pagination instance with the provided settings.
   ///
   /// [name]: Name to identify the Pagination instance.
@@ -120,10 +148,14 @@ class Pagination<T extends Object> {
     String name, {
     int fetchingSize = 10,
     int? limit,
+    int? threshold,
     double preload = 1000,
     int? initialSize,
+    Object? snapshot,
   }) {
     final value = Pagination<T>(
+      snapshot: snapshot,
+      threshold: threshold,
       initialSize: initialSize,
       fetchingSize: fetchingSize,
       limit: limit,
@@ -152,6 +184,14 @@ class Pagination<T extends Object> {
     );
   }
 
+  static void attach<T extends Object>(
+    String name, {
+    required OnPaginationCallback<T> request,
+    OnPaginationNotifier<T>? response,
+  }) {
+    return of<T>(name).callback(callback: request, notifier: response);
+  }
+
   /// Indicates whether the pagination is in its initial state.
   bool get isInitial => _initial;
 
@@ -161,8 +201,21 @@ class Pagination<T extends Object> {
   /// Indicates whether all available data has been loaded.
   bool get isFinish => _finish;
 
+  /// The key for the next page to be fetched.
+  ///
+  /// Initialized with the same value as [initialKey], received in the
+  /// constructor.
   /// Retrieves the current snapshot of the pagination state.
-  Object? get snapshot => _snapshot;
+
+  Object? get snapshot => value.snapshot ?? _snapshot;
+
+  set snapshot(Object? value) {
+    this.value = PaginationState<T>(
+      error: error,
+      items: items,
+      snapshot: value,
+    );
+  }
 
   /// Retrieves the current snapshot interpreted as a page number.
   ///
@@ -222,6 +275,16 @@ class Pagination<T extends Object> {
     }
   }
 
+  int get triggerIndex => max(0, size - (threshold ?? 3));
+
+  PaginationConfig get config {
+    return PaginationConfig(
+      initialSize: initialSize,
+      fetchingSize: remainingSize,
+      snapshot: snapshot,
+    );
+  }
+
   /// Retrieves the item at the specified index.
   PaginationData<T> getItem(int index) {
     final value = _items.elementAtOrNull(index);
@@ -252,7 +315,11 @@ class Pagination<T extends Object> {
   ///
   /// [value]: The list of items to add.
   void _puts(List<T> value) {
-    _items.addAll(value);
+    this.value = PaginationState<T>(
+      items: items..addAll(value),
+      error: null,
+      snapshot: _snapshot,
+    );
     if (limit != null && size >= limit!) {
       _finish = true;
     }
@@ -267,7 +334,7 @@ class Pagination<T extends Object> {
       final x = controller.position.maxScrollExtent;
       final y = controller.position.atEdge && controller.position.pixels != 0;
       if (x == 0 || y) {
-        _fetch();
+        fetch();
       }
     }
   }
@@ -275,13 +342,13 @@ class Pagination<T extends Object> {
   /// Fetches more data based on the current pagination state.
   ///
   /// This function is called whenever more data needs to be loaded.
-  void _fetch() {
+  void fetch() {
     final callback = _callback;
-    final notifier = _notifier;
-    if (callback != null && notifier != null) {
+    if (callback != null) {
       if (!_finish && !_loading) {
         _loading = true;
-        notifier([]);
+        final notifier = _notifier;
+        if (notifier != null) notifier([]);
         callback(PaginationConfig(
           initialSize: initialSize,
           fetchingSize: remainingSize,
@@ -291,23 +358,24 @@ class Pagination<T extends Object> {
           _loading = false;
           if (!(value.status.isError || value.status.isResultNotFound)) {
             _snapshot = value.snapshot;
-            if (value.status.isInvalid) _fetch();
+            if (value.status.isInvalid) fetch();
             if (value.isSuccessful) {
               _puts(value.result);
-              notifier(value.result);
+              if (notifier != null) notifier(value.result);
               if (size < initialSize) {
-                _fetch();
+                fetch();
               } else {
                 _initialize();
               }
             }
           } else {
+            if (!isControllerMode) error = value.exception;
             final data = value.result.where((e) {
               return !_items.contains(e);
             }).toList();
             _puts(data);
             _finish = true;
-            notifier(value.result);
+            if (notifier != null) notifier(value.result);
           }
         });
       }
@@ -331,14 +399,24 @@ class Pagination<T extends Object> {
     _controller = controller;
     _callback = callback;
     _notifier = notifier;
-    _fetch();
+    fetch();
     _controller?.paginate(
       preload: preload,
-      onLoad: _fetch,
+      onLoad: fetch,
       onLoading: () async {
         return _loading || _finish;
       },
     );
+  }
+
+  void callback({
+    required OnPaginationCallback<T> callback,
+    OnPaginationNotifier<T>? notifier,
+  }) {
+    _initial = true;
+    _callback = callback;
+    _notifier = notifier;
+    fetch();
   }
 
   /// Initializes pagination state and data retrieval.
@@ -351,7 +429,45 @@ class Pagination<T extends Object> {
     _loading = false;
     _finish = false;
     _snapshot = null;
-    _items = [];
-    if (reload) _fetch();
+    value = PaginationState<T>(
+      snapshot: null,
+      error: null,
+      items: null,
+    );
+    if (reload && isControllerMode) fetch();
+  }
+
+  void push(PaginationResponse<T> value) {
+    if (!isControllerMode && !_finish && !_loading) {
+      _initial = false;
+      _loading = false;
+      if (!(value.status.isError || value.status.isResultNotFound)) {
+        _snapshot = value.snapshot;
+        if (value.isSuccessful) _puts(value.result);
+      } else {
+        if (!isControllerMode) error = value.exception;
+        final data = value.result.where((e) {
+          return !_items.contains(e);
+        }).toList();
+        _puts(data);
+        _finish = true;
+      }
+    }
+  }
+
+  /// The current error, if any. Initially `null`.
+  dynamic get error => value.error;
+
+  set error(dynamic error) {
+    value = PaginationState<T>(
+      error: error,
+      items: items,
+      snapshot: _snapshot,
+    );
+  }
+
+  /// Erases the current error.
+  void retry() {
+    error = null;
   }
 }

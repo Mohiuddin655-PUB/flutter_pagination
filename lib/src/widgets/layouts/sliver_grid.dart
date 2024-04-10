@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
+import '../../pagination.dart';
 import '../../utils/sliver_child_delegate.dart';
 import '../helpers/layout_builder.dart';
 
@@ -18,10 +18,10 @@ typedef SliverGridBuilder = SliverWithKeepAliveWidget Function(
 /// [CustomScrollView] when added to the screen.
 /// Useful for combining multiple scrollable pieces in your UI or if you need
 /// to add some widgets preceding or following your paged grid.
-class PaginationSliverGrid<K, E> extends StatelessWidget {
+class PaginationSliverGrid<T extends Object> extends StatelessWidget {
   const PaginationSliverGrid({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     required this.gridDelegate,
     this.addAutomaticKeepAlives = true,
@@ -33,11 +33,11 @@ class PaginationSliverGrid<K, E> extends StatelessWidget {
     this.shrinkWrapFirstPageIndicators = false,
   });
 
-  /// Matches [PaginationLayoutBuilder.pagingController].
-  final PaginationController<K, E> pagingController;
+  /// Matches [PaginationLayoutBuilder.pagination].
+  final Pagination<T> pagination;
 
   /// Matches [PaginationLayoutBuilder.builderDelegate].
-  final PaginationChildDelegate<E> builderDelegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// Matches [GridView.gridDelegate].
   final SliverGridDelegate gridDelegate;
@@ -74,11 +74,11 @@ class PaginationSliverGrid<K, E> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PaginationLayoutBuilder<K, E>(
+    return PaginationLayoutBuilder<T>(
       layoutProtocol: PaginationLayoutProtocol.sliver,
-      pagingController: pagingController,
+      pagination: pagination,
       builderDelegate: builderDelegate,
-      completedListingBuilder: (
+      completeBuilder: (
         context,
         itemBuilder,
         itemCount,
@@ -98,7 +98,7 @@ class PaginationSliverGrid<K, E> extends StatelessWidget {
           addRepaintBoundaries: addRepaintBoundaries,
         );
       },
-      loadingListingBuilder: (
+      ongoingBuilder: (
         context,
         itemBuilder,
         itemCount,
@@ -194,7 +194,7 @@ class _AppendedSliverGrid extends StatelessWidget {
   SliverChildBuilderDelegate _buildSliverDelegate({
     WidgetBuilder? appendixBuilder,
   }) =>
-      PaginationSliverChildDelegate(
+      PaginationSliverDelegate(
         builder: itemBuilder,
         childCount: itemCount,
         appendixBuilder: appendixBuilder,

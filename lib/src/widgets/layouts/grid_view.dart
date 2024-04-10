@@ -2,17 +2,17 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/child_builder_delegate.dart';
-import '../../core/controller.dart';
+import '../../pagination.dart';
 import 'sliver_grid.dart';
 
 /// A [GridView] with pagination capabilities.
 ///
 /// Wraps a [PaginationSliverGrid] in a [BoxScrollView] so that it can be
 /// used without the need for a [CustomScrollView]. Similar to a [GridView].
-class PaginationGridView<K, E> extends BoxScrollView {
+class PaginationGridView<T extends Object> extends BoxScrollView {
   const PaginationGridView({
     super.key,
-    required this.pagingController,
+    required this.pagination,
     required this.builderDelegate,
     required this.gridDelegate,
     // Matches [ScrollView.controller].
@@ -62,11 +62,11 @@ class PaginationGridView<K, E> extends BoxScrollView {
           clipBehavior: clipBehavior,
         );
 
-  /// Matches [PagedLayoutBuilder.pagingController].
-  final PaginationController<K, E> pagingController;
+  /// Matches [PagedLayoutBuilder.pagination].
+  final Pagination<T> pagination;
 
   /// Matches [PagedLayoutBuilder.builderDelegate].
-  final PaginationChildDelegate<E> builderDelegate;
+  final PaginationBuilderDelegate<T> builderDelegate;
 
   /// Matches [GridView.gridDelegate].
   final SliverGridDelegate gridDelegate;
@@ -94,9 +94,9 @@ class PaginationGridView<K, E> extends BoxScrollView {
 
   @override
   Widget buildChildLayout(BuildContext context) {
-    return PaginationSliverGrid<K, E>(
+    return PaginationSliverGrid<T>(
       builderDelegate: builderDelegate,
-      pagingController: pagingController,
+      pagination: pagination,
       gridDelegate: gridDelegate,
       addAutomaticKeepAlives: addAutomaticKeepAlives,
       addRepaintBoundaries: addRepaintBoundaries,
