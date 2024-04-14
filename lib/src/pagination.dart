@@ -95,6 +95,34 @@ class Pagination<T extends Object> extends ValueNotifier<PaginationState<T>> {
     return of<T>(name).getItem(index);
   }
 
+  /// Remove the item at the specified index.
+  ///
+  /// [name]: Name of the Pagination instance.
+  /// [index]: Index of the item to retrieve.
+  static T removeItemOf<T extends Object>(String name, int index) {
+    return of<T>(name).removeItem(index);
+  }
+
+  /// Update the item at the specified index.
+  ///
+  /// [name]: Name of the Pagination instance.
+  /// [index]: Index of the item to retrieve.
+  static void updateItemOf<T extends Object>(
+    String name,
+    int index,
+    T Function(T old) callback,
+  ) {
+    return of<T>(name).update(index, callback);
+  }
+
+  /// Clear all items.
+  ///
+  /// [name]: Name of the Pagination instance.
+  /// [index]: Index of the item to retrieve.
+  static List<T> clearOf<T extends Object>(String name) {
+    return of<T>(name).clear();
+  }
+
   /// Retrieves all items from the Pagination instance.
   ///
   /// [name]: Name of the Pagination instance.
@@ -126,6 +154,18 @@ class Pagination<T extends Object> extends ValueNotifier<PaginationState<T>> {
   }
 
   static void closeOf(String name) => _proxies.remove(name);
+
+  static void notify<T extends Object>(String name) {
+    return of<T>(name).notifyListeners();
+  }
+
+  static void setOf<T extends Object>(
+    String name,
+    List<T> value, {
+    bool notify = true,
+  }) {
+    return of<T>(name).set(value, notify);
+  }
 
   static PaginationConfig configOf<T extends Object>(String name) {
     return of<T>(name).config;
@@ -293,6 +333,30 @@ class Pagination<T extends Object> extends ValueNotifier<PaginationState<T>> {
     } else {
       return const PaginationData.empty();
     }
+  }
+
+  /// Update the item at the specified index.
+  void update(int index, T Function(T old) callback) {
+    final x = _items.removeAt(index);
+    final y = callback(x);
+    _items.insert(index, y);
+  }
+
+  /// Remove the item at the specified index.
+  T removeItem(int index) => _items.removeAt(index);
+
+  /// Clear all items
+  List<T> clear() {
+    final x = _items;
+    _items.clear();
+    return x;
+  }
+
+  /// Clear all items
+  void set(List<T> value, [bool notify = true]) {
+    _items.clear();
+    _items.addAll(value);
+    if (notify) notifyListeners();
   }
 
   /// Retrieves the item real index at the specified index.

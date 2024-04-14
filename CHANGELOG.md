@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Add some pagination operation inside pagination
+
 ## 1.1.0
 
 * Add PaginationGridView
